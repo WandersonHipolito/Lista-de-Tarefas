@@ -7,20 +7,25 @@
 //
 
 import UIKit
+import CoreData
 
-class TodoListViewController: UITableViewController {
+class TodoListViewController: UITableViewController{
     
     var itemArray = [Item]()
-    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Item.plist")
+    let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
+    let request : NSFetchRequest<Item> = Item.fetchRequest()
+    var selectedCategory: Category?{
+        didSet{
+            loadItens()
+        }
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        print(dataFilePath)
-        // Do any additional setup after loading the view.
-
-        loadItens()
-        self.tableView.delegate = self
         
+        //print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Item.plist"))
+        self.tableView.delegate = self
+        //self.loadItens(with: request)
     }
     
     
@@ -56,7 +61,8 @@ class TodoListViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         //print(itemArray[indexPath.row])
         
-        
+        //        context.delete(itemArray[indexPath.row])
+        //        itemArray.remove(at: indexPath.row)
         
         if itemArray[indexPath.row].done == false{
             itemArray[indexPath.row].done = true
@@ -84,8 +90,11 @@ class TodoListViewController: UITableViewController {
         let alertAction = UIAlertController(title: "Adicionar Itens", message: "", preferredStyle: .alert)
         let okAction = UIAlertAction(title: "Add Item", style: .default) { (action) in
             // onde usuario vai inserir o item
-            let newItem = Item()
+            
+            let newItem = Item(context: self.context)
             newItem.title = textField.text!
+            newItem.done = false
+            newItem.parentCategory = self.selectedCategory
             self.itemArray.append(newItem)
             
             
@@ -111,28 +120,64 @@ class TodoListViewController: UITableViewController {
     
     //MARK: - Salvando os itens
     func saveItems() {
-        let encoder = PropertyListEncoder()
-        
         do{
-            let data = try encoder.encode(itemArray)
-            try data.write(to: self.dataFilePath!)
+            try context.save()
             
         }catch{
-            print("Erro no ecoding do itemArray: \(error)")
+            print("Error to try save contex: \(error)")
             
         }
     }
     
     //MARK: - Metodo para carregar os itens
     
-    func loadItens() {
-        if let data = try? Data(contentsOf: dataFilePath!){
-            let decoder = PropertyListDecoder()
-            do {
-                itemArray = try decoder.decode([Item].self, from: data)
-                
-            } catch {
-                print("Erro ao carregar dados: \(error.localizedDescription)")
+    func loadItens(with request: NSFetchRequest<Item> = Item.fetchRequest(), predicate: NSPredicate? = nil) {
+        
+        let categoryPredicate = NSPredicate(format: "parentCategory.name MATCHES %@", selectedCategory!.name!)
+        
+        if let additionalPredicate = predicate{
+            request.predicate = NSCompoundPredicate.init(andPredicateWithSubpredicates: [categoryPredicate, additionalPredicate])
+            
+        }else {
+            request.predicate = categoryPredicate
+            
+        }
+        
+        
+        do {
+            itemArray = try context.fetch(request)
+            
+        } catch  {
+            print("Error in fetching context: \(error)")
+            
+        }
+    }
+    
+}
+
+//MARK: - UISearchbarDelegate
+extension TodoListViewController: UISearchBarDelegate{
+    
+    //função procura pelas palavras que estao na lista
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        
+        let request: NSFetchRequest<Item> = Item.fetchRequest()
+        print(searchBar.text!)
+        //fazer consulta no bd
+        let predicate = NSPredicate(format: "title CONTAINS[cd] %@", searchBar.text!)
+        request.sortDescriptors = [NSSortDescriptor(key: "title", ascending: true)]
+        
+        self.loadItens(with: request, predicate: predicate)
+        self.tableView.reloadData()
+        
+    }
+    // função faz voltar a lista original
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        if searchBar.text?.count == 0{
+            loadItens()
+            
+            DispatchQueue.main.async {
+                searchBar.resignFirstResponder()
             }
         }
     }
