@@ -45,24 +45,12 @@ class TodoListViewController: UITableViewController{
         //using tenory operator
         
         cell.accessoryType = item.done ? .checkmark : .none
-        
-        //        if itemArray[indexPath.row].done == true{
-        //            cell.accessoryType = .checkmark
-        //
-        //        } else {
-        //            cell.accessoryType = .none
-        //
-        //        }
         return cell
     }
     
     
     //MARK: - TableView DElegate
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        //print(itemArray[indexPath.row])
-        
-        //        context.delete(itemArray[indexPath.row])
-        //        itemArray.remove(at: indexPath.row)
         
         if itemArray[indexPath.row].done == false{
             itemArray[indexPath.row].done = true
@@ -136,7 +124,7 @@ class TodoListViewController: UITableViewController{
         let categoryPredicate = NSPredicate(format: "parentCategory.name MATCHES %@", selectedCategory!.name!)
         
         if let additionalPredicate = predicate{
-            request.predicate = NSCompoundPredicate.init(andPredicateWithSubpredicates: [categoryPredicate, additionalPredicate])
+            request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [categoryPredicate, additionalPredicate])
             
         }else {
             request.predicate = categoryPredicate
@@ -162,7 +150,7 @@ extension TodoListViewController: UISearchBarDelegate{
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
         
         let request: NSFetchRequest<Item> = Item.fetchRequest()
-        print(searchBar.text!)
+        
         //fazer consulta no bd
         let predicate = NSPredicate(format: "title CONTAINS[cd] %@", searchBar.text!)
         request.sortDescriptors = [NSSortDescriptor(key: "title", ascending: true)]
@@ -175,7 +163,7 @@ extension TodoListViewController: UISearchBarDelegate{
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
         if searchBar.text?.count == 0{
             loadItens()
-            
+            tableView.reloadData()
             DispatchQueue.main.async {
                 searchBar.resignFirstResponder()
             }
