@@ -8,6 +8,15 @@
 
 import UIKit
 import CoreData
+import SwipeCellKit
+
+
+extension UINavigationController{
+    open override var preferredStatusBarStyle: UIStatusBarStyle{
+        return .lightContent
+    }
+}
+
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {

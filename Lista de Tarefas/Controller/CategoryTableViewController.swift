@@ -9,7 +9,8 @@
 import UIKit
 import CoreData
 
-class CategoryTableViewController: UITableViewController {
+
+class CategoryTableViewController: SwipeTableViewController {
     
     //variables
     var categoryArray = [Category]()
@@ -19,8 +20,8 @@ class CategoryTableViewController: UITableViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        tableView.delegate = self
+        self.tableView.rowHeight = 60
+        self.tableView.delegate = self
         loadCategory(with: request)
     }
     
@@ -30,12 +31,12 @@ class CategoryTableViewController: UITableViewController {
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        //CategoryCell <- resuable cell name
-        let cell = tableView.dequeueReusableCell(withIdentifier: "CategoryCell", for: indexPath)
-        cell.textLabel?.text = categoryArray[indexPath.row].name
-        
+
+        let cell = super.tableView(tableView, cellForRowAt: indexPath)
+        cell.textLabel?.text = categoryArray[indexPath.row].name ?? "Não ha categorias registradas"
         return cell
     }
+    
     
     // MARK: - Add New Categories
     @IBAction func addButtonPress(_ sender: UIBarButtonItem) {
@@ -72,17 +73,6 @@ class CategoryTableViewController: UITableViewController {
     
     // MARK: - TableView Delegate Methods
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        //
-        //        if tableView.cellForRow(at: indexPath)?.accessoryType == .checkmark{
-        //            tableView.cellForRow(at: indexPath)?.accessoryType = .none
-        //        }else{
-        //            tableView.cellForRow(at: indexPath)?.accessoryType = .checkmark
-        //        }
-        //
-        //
-        //
-        //        tableView.deselectRow(at: indexPath, animated: true)
-        
         performSegue(withIdentifier: "gotoItem", sender: nil)
         
     }
@@ -114,12 +104,20 @@ class CategoryTableViewController: UITableViewController {
     func loadCategory(with request: NSFetchRequest<Category> = Category.fetchRequest()) {
         
         do {
-          categoryArray = try contex.fetch(request)
+            categoryArray = try contex.fetch(request)
             
         } catch  {
             print("Error in request function category: \(error.localizedDescription)")
             
         }
+    }
+    
+    // Deletar os dados do swipe
+    override func updateModel(at indexPath: IndexPath) {
+                    self.contex.delete(self.categoryArray[indexPath.row])
+                    self.categoryArray.remove(at: indexPath.row)
+                    self.saveCategory()
+                    self.tableView.reloadData()
     }
     
     

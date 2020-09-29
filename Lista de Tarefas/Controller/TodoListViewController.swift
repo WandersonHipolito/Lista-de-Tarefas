@@ -9,7 +9,7 @@
 import UIKit
 import CoreData
 
-class TodoListViewController: UITableViewController{
+class TodoListViewController: SwipeTableViewController{
     
     var itemArray = [Item]()
     let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
@@ -25,6 +25,7 @@ class TodoListViewController: UITableViewController{
         
         //print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Item.plist"))
         self.tableView.delegate = self
+        self.tableView.rowHeight = 60
         //self.loadItens(with: request)
     }
     
@@ -37,13 +38,11 @@ class TodoListViewController: UITableViewController{
     
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        
         let item = itemArray[indexPath.row]
-        let cell = tableView.dequeueReusableCell(withIdentifier: "TodoListCell", for: indexPath)
-        cell.textLabel?.text = itemArray[indexPath.row].title
+        let cell = super.tableView(tableView, cellForRowAt: indexPath)
+        cell.textLabel?.text = itemArray[indexPath.row].title ?? "Não ha itens registrados"
         
         //using tenory operator
-        
         cell.accessoryType = item.done ? .checkmark : .none
         return cell
     }
@@ -141,7 +140,21 @@ class TodoListViewController: UITableViewController{
         }
     }
     
+    //MARK: - Swipe methods
+    override func updateModel(at indexPath: IndexPath) {
+        self.context.delete(itemArray[indexPath.row])
+        self.itemArray.remove(at: indexPath.row)
+        self.saveItems()
+        self.tableView.reloadData()
+    }
+
+
+
+
+    
+    
 }
+
 
 //MARK: - UISearchbarDelegate
 extension TodoListViewController: UISearchBarDelegate{
